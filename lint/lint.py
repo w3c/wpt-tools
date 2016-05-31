@@ -12,9 +12,7 @@ from collections import defaultdict
 from six import iteritems
 from six.moves import range
 
-from manifest.sourcefile import SourceFile
-
-here = os.path.abspath(os.path.split(__file__)[0])
+from ..manifest.sourcefile import SourceFile
 
 ERROR_MSG = """You must fix all errors; for details on how to fix them, see
 https://github.com/w3c/web-platform-tests/blob/master/docs/lint-tool.md
@@ -249,8 +247,8 @@ def parse_args():
     return parser.parse_args()
 
 def main():
-    from .. import localpaths
-    repo_root = localpaths.repo_root
+    from ..paths import repo_root
+
     args = parse_args()
     paths = args.paths if args.paths else all_git_paths(repo_root)
     return lint(repo_root, paths)
