@@ -10,7 +10,7 @@ except ImportError:
 import html5lib
 
 from . import vcs
-from .item import Stub, ManualTest, WebdriverSpecTest, RefTest, TestharnessTest
+from .item import Stub, ManualTest, WebdriverSpecTest, RefTest, TestharnessTest, VisualTest
 from .utils import rel_path_to_url, is_blacklisted, ContextManagerBytesIO, cached_property
 
 wd_pattern = "*.py"
@@ -124,6 +124,12 @@ class SourceFile(object):
         """Check if the file name matches the conditions for the file to
         be a manual test file"""
         return self.type_flag == "manual"
+
+    @property
+    def name_is_visual(self):
+        """Check if the file name matches the conditions for the file to
+        be a visual test file"""
+        return self.type_flag == "visual"
 
     @property
     def name_is_multi_global(self):
@@ -351,6 +357,9 @@ class SourceFile(object):
 
         elif self.name_is_manual:
             rv = [ManualTest(self, self.url)]
+
+        elif self.name_is_visual:
+            rv = [VisualTest(self, self.url)]
 
         elif self.name_is_multi_global:
             rv = [

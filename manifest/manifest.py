@@ -3,7 +3,7 @@ import os
 from collections import defaultdict, OrderedDict
 from six import iteritems
 
-from .item import item_types, ManualTest, WebdriverSpecTest, Stub, RefTest, TestharnessTest
+from .item import item_types, ManualTest, WebdriverSpecTest, Stub, RefTest, TestharnessTest, VisualTest
 from .log import get_logger
 from .sourcefile import SourceFile
 from .utils import from_os_path, to_os_path
@@ -256,7 +256,8 @@ class Manifest(object):
                         "reftest": RefTest,
                         "manual": ManualTest,
                         "stub": Stub,
-                        "wdspec": WebdriverSpecTest}
+                        "wdspec": WebdriverSpecTest,
+                        "visual": VisualTest}
 
         source_files = {}
 
@@ -362,7 +363,8 @@ class LocalChanges(object):
                         "reftest": RefTest,
                         "manual": ManualTest,
                         "stub": Stub,
-                        "wdspec": WebdriverSpecTest}
+                        "wdspec": WebdriverSpecTest,
+                        "visual": VisualTest}
 
         for test_type, paths in iteritems(obj["items"]):
             for path, tests in iteritems(paths):

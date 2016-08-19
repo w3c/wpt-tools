@@ -4,7 +4,7 @@ from abc import ABCMeta, abstractmethod, abstractproperty
 
 from .utils import from_os_path, to_os_path
 
-item_types = ["testharness", "reftest", "manual", "stub", "wdspec"]
+item_types = ["testharness", "reftest", "manual", "stub", "wdspec", "visual"]
 
 
 def get_source_file(source_files, tests_root, manifest, path):
@@ -177,6 +177,10 @@ class RefTest(URLManifestItem):
 
 class ManualTest(URLManifestItem):
     item_type = "manual"
+
+
+class VisualTest(URLManifestItem):
+    item_type = "visual"
 
 
 class Stub(URLManifestItem):
