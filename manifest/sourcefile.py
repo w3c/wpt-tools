@@ -344,6 +344,32 @@ class SourceFile(object):
         # return True if the intersection between the two sets is non-empty
         return bool(self.css_flags & {"animated", "font", "history", "interact", "paged", "speech", "userstyle"})
 
+    @cached_property
+    def spec_link_nodes(self):
+        """List of ElementTree Elements corresponding to nodes representing a
+        <link rel=help>, used to point to specs"""
+        if not self.root:
+            return []
+        return self.root.findall(".//{http://www.w3.org/1999/xhtml}link[@rel='help']")
+
+    @cached_property
+    def spec_links(self):
+        """Set of spec links specified in the file"""
+        rv = set()
+        for item in self.spec_link_nodes:
+            if "href" in item.attrib:
+                rv.add(item.attrib["href"])
+        return rv
+
+    @cached_property
+    def content_is_css_visual(self):
+        """Boolean indicating whether the file content represents a
+        CSS WG-style manual test"""
+        if not self.root:
+            return None
+        return bool(self.ext in {'.xht', '.html', '.xhtml', '.htm', '.xml', '.svg'} and
+                    self.spec_links)
+
     def manifest_items(self):
         """List of manifest items corresponding to the file. There is typically one
         per test, but in the case of reftests a node may have corresponding manifest
@@ -385,6 +411,9 @@ class SourceFile(object):
         elif self.content_is_ref_node:
             rv = [RefTest(self, self.url, self.references, timeout=self.timeout,
                           viewport_size=self.viewport_size, dpi=self.dpi)]
+
+        elif self.content_is_css_visual:
+            rv = [VisualTest(self, self.url)]
 
         else:
             # If nothing else it's a helper file, which we don't have a specific type for
