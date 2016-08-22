@@ -402,7 +402,7 @@ class SourceFile(object):
         elif self.name_is_webdriver:
             rv = [WebdriverSpecTest(self, self.url)]
 
-        elif self.content_is_css_manual:
+        elif self.content_is_css_manual and not self.name_is_reference:
             rv = [ManualTest(self, self.url)]
 
         elif self.content_is_testharness:
@@ -415,7 +415,7 @@ class SourceFile(object):
             rv = [RefTest(self, self.url, self.references, timeout=self.timeout,
                           viewport_size=self.viewport_size, dpi=self.dpi)]
 
-        elif self.content_is_css_visual:
+        elif self.content_is_css_visual and not self.name_is_reference:
             rv = [VisualTest(self, self.url)]
 
         else:
