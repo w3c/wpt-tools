@@ -10,7 +10,7 @@ except ImportError:
 
 import html5lib
 
-from . import vcs
+from . import vcs, XMLParser
 from .item import Stub, ManualTest, WebdriverSpecTest, RefTest, TestharnessTest, VisualTest
 from .utils import rel_path_to_url, is_blacklisted, ContextManagerBytesIO, cached_property
 
@@ -29,8 +29,8 @@ def replace_end(s, old, new):
 
 class SourceFile(object):
     parsers = {"html":lambda x:html5lib.parse(x, treebuilder="etree"),
-               "xhtml":ElementTree.parse,
-               "svg":ElementTree.parse}
+               "xhtml":lambda x:ElementTree.parse(x, XMLParser.XMLParser()),
+               "svg":lambda x:ElementTree.parse(x, XMLParser.XMLParser())}
 
     def __init__(self, tests_root, rel_path, url_base, use_committed=False,
                  contents=None):
