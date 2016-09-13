@@ -214,7 +214,7 @@ class SourceFile(object):
     def timeout(self):
         """The timeout of a test or reference file. "long" if the file has an extended timeout
         or None otherwise"""
-        if not self.root:
+        if self.root is None:
             return
 
         if self.timeout_nodes:
@@ -231,7 +231,7 @@ class SourceFile(object):
     @cached_property
     def viewport_size(self):
         """The viewport size of a test or reference file"""
-        if not self.root:
+        if self.root is None:
             return None
 
         if not self.viewport_nodes:
@@ -248,7 +248,7 @@ class SourceFile(object):
     @cached_property
     def dpi(self):
         """The device pixel ratio of a test or reference file"""
-        if not self.root:
+        if self.root is None:
             return None
 
         if not self.dpi_nodes:
@@ -266,7 +266,7 @@ class SourceFile(object):
     def content_is_testharness(self):
         """Boolean indicating whether the file content represents a
         testharness.js test"""
-        if not self.root:
+        if self.root is None:
             return None
         return bool(self.testharness_nodes)
 
@@ -294,7 +294,7 @@ class SourceFile(object):
     def reftest_nodes(self):
         """List of ElementTree Elements corresponding to nodes representing a
         to a reftest <link>"""
-        if not self.root:
+        if self.root is None:
             return []
 
         match_links = self.root.findall(".//{http://www.w3.org/1999/xhtml}link[@rel='match']")
@@ -324,7 +324,7 @@ class SourceFile(object):
     def css_flag_nodes(self):
         """List of ElementTree Elements corresponding to nodes representing a
         flag <meta>"""
-        if not self.root:
+        if self.root is None:
             return []
         return self.root.findall(".//{http://www.w3.org/1999/xhtml}meta[@name='flags']")
 
@@ -342,7 +342,7 @@ class SourceFile(object):
     def content_is_css_manual(self):
         """Boolean indicating whether the file content represents a
         CSS WG-style manual test"""
-        if not self.root:
+        if self.root is None:
             return None
         # return True if the intersection between the two sets is non-empty
         return bool(self.css_flags & {"animated", "font", "history", "interact", "paged", "speech", "userstyle"})
@@ -351,7 +351,7 @@ class SourceFile(object):
     def spec_link_nodes(self):
         """List of ElementTree Elements corresponding to nodes representing a
         <link rel=help>, used to point to specs"""
-        if not self.root:
+        if self.root is None:
             return []
         return self.root.findall(".//{http://www.w3.org/1999/xhtml}link[@rel='help']")
 
@@ -368,7 +368,7 @@ class SourceFile(object):
     def content_is_css_visual(self):
         """Boolean indicating whether the file content represents a
         CSS WG-style manual test"""
-        if not self.root:
+        if self.root is None:
             return None
         return bool(self.ext in {'.xht', '.html', '.xhtml', '.htm', '.xml', '.svg'} and
                     self.spec_links)
