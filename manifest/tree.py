@@ -1,3 +1,5 @@
+from .. import localpaths
+
 import os
 from six.moves import cStringIO as StringIO
 from fnmatch import fnmatch

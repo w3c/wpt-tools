@@ -1,3 +1,5 @@
+from .. import localpaths
+
 import os
 from six.moves.urllib.parse import urljoin
 from abc import ABCMeta, abstractmethod, abstractproperty

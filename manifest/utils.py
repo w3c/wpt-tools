@@ -1,3 +1,5 @@
+from .. import localpaths
+
 import os
 from six import BytesIO
 

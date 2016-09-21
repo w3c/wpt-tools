@@ -1,3 +1,5 @@
+from .. import localpaths
+
 import imp
 import os
 from six.moves.urllib.parse import urljoin
