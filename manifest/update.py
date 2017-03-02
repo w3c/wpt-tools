@@ -4,7 +4,7 @@ import imp
 import os
 import sys
 
-import manifest
+from . import manifest
 from . import vcs
 from .log import get_logger
 

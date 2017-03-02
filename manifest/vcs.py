@@ -34,7 +34,7 @@ class Git(object):
             return changes
 
         rename_data = None
-        for entry in data.split("\0")[:-1]:
+        for entry in data.split(b"\0")[:-1]:
             if rename_data is not None:
                 status, rel_path = entry.split(" ")
                 if status[0] == "R":
@@ -54,7 +54,7 @@ class Git(object):
     def __iter__(self):
         cmd = ["ls-tree", "-r", "-z", "--name-only", "HEAD"]
         local_changes = self._local_changes()
-        for rel_path in self.git(*cmd).split("\0")[:-1]:
+        for rel_path in self.git(*cmd).split(b"\0")[:-1]:
             if not os.path.isdir(os.path.join(self.root, rel_path)):
                 if rel_path in local_changes:
                     contents = self._show_file(rel_path)
