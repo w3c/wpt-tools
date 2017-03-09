@@ -13,7 +13,6 @@ from ..lint import filter_whitelist_errors, parse_whitelist, lint
 
 _dummy_repo = os.path.join(os.path.dirname(__file__), "dummy")
 
-
 def _mock_lint(name, **kwargs):
     wrapped = getattr(lint_mod, name)
     return mock.patch(lint_mod.__name__ + "." + name, wraps=wrapped, **kwargs)
@@ -96,169 +95,144 @@ CONSOLE:streams/resources/test-utils.js: 12
     assert ignored == expected_ignored
 
 
-def test_lint_no_files(capsys):
-    rv = lint(_dummy_repo, [], False, False)
+def test_lint_no_files(caplog):
+    rv = lint(_dummy_repo, [], "normal", False)
     assert rv == 0
-    out, err = capsys.readouterr()
-    assert out == ""
-    assert err == ""
+    assert caplog.text == ""
 
 
-def test_lint_ignored_file(capsys):
+def test_lint_ignored_file(caplog):
     with _mock_lint("check_path") as mocked_check_path:
         with _mock_lint("check_file_contents") as mocked_check_file_contents:
-            rv = lint(_dummy_repo, ["broken_ignored.html"], False, False)
+            rv = lint(_dummy_repo, ["broken_ignored.html"], "normal", False)
             assert rv == 0
             assert not mocked_check_path.called
             assert not mocked_check_file_contents.called
-    out, err = capsys.readouterr()
-    assert out == ""
-    assert err == ""
+    assert caplog.text == ""
 
 
-def test_lint_not_existing_file(capsys):
+def test_lint_not_existing_file(caplog):
     with _mock_lint("check_path") as mocked_check_path:
         with _mock_lint("check_file_contents") as mocked_check_file_contents:
             # really long path-linted filename
             name = "a" * 256 + ".html"
-            rv = lint(_dummy_repo, [name], False, False)
+            rv = lint(_dummy_repo, [name], "normal", False)
             assert rv == 0
             assert not mocked_check_path.called
             assert not mocked_check_file_contents.called
-    out, err = capsys.readouterr()
-    assert out == ""
-    assert err == ""
+    assert caplog.text == ""
 
 
-def test_lint_passing(capsys):
+def test_lint_passing(caplog):
     with _mock_lint("check_path") as mocked_check_path:
         with _mock_lint("check_file_contents") as mocked_check_file_contents:
-            rv = lint(_dummy_repo, ["okay.html"], False, False)
+            rv = lint(_dummy_repo, ["okay.html"], "normal", False)
             assert rv == 0
             assert mocked_check_path.call_count == 1
             assert mocked_check_file_contents.call_count == 1
-    out, err = capsys.readouterr()
-    assert out == ""
-    assert err == ""
+    assert caplog.text == ""
 
 
-def test_lint_failing(capsys):
+def test_lint_failing(caplog):
     with _mock_lint("check_path") as mocked_check_path:
         with _mock_lint("check_file_contents") as mocked_check_file_contents:
-            rv = lint(_dummy_repo, ["broken.html"], False, False)
+            rv = lint(_dummy_repo, ["broken.html"], "normal", False)
             assert rv == 1
             assert mocked_check_path.call_count == 1
             assert mocked_check_file_contents.call_count == 1
-    out, err = capsys.readouterr()
-    assert "TRAILING WHITESPACE" in out
-    assert "broken.html:1" in out
-    assert err == ""
+    assert "TRAILING WHITESPACE" in caplog.text
+    assert "broken.html:1" in caplog.text
 
 
-def test_ref_existent_relative(capsys):
+def test_ref_existent_relative(caplog):
     with _mock_lint("check_path") as mocked_check_path:
         with _mock_lint("check_file_contents") as mocked_check_file_contents:
-            rv = lint(_dummy_repo, ["ref/existent_relative.html"], False, False)
+            rv = lint(_dummy_repo, ["ref/existent_relative.html"], "normal", False)
             assert rv == 0
             assert mocked_check_path.call_count == 1
             assert mocked_check_file_contents.call_count == 1
-    out, err = capsys.readouterr()
-    assert out == ""
-    assert err == ""
+    assert caplog.text == ""
 
 
-def test_ref_existent_root_relative(capsys):
+def test_ref_existent_root_relative(caplog):
     with _mock_lint("check_path") as mocked_check_path:
         with _mock_lint("check_file_contents") as mocked_check_file_contents:
-            rv = lint(_dummy_repo, ["ref/existent_root_relative.html"], False, False)
+            rv = lint(_dummy_repo, ["ref/existent_root_relative.html"], "normal", False)
             assert rv == 0
             assert mocked_check_path.call_count == 1
             assert mocked_check_file_contents.call_count == 1
-    out, err = capsys.readouterr()
-    assert out == ""
-    assert err == ""
+    assert caplog.text == ""
 
 
-def test_ref_non_existent_relative(capsys):
+def test_ref_non_existent_relative(caplog):
     with _mock_lint("check_path") as mocked_check_path:
         with _mock_lint("check_file_contents") as mocked_check_file_contents:
-            rv = lint(_dummy_repo, ["ref/non_existent_relative.html"], False, False)
+            rv = lint(_dummy_repo, ["ref/non_existent_relative.html"], "normal", False)
             assert rv == 1
             assert mocked_check_path.call_count == 1
             assert mocked_check_file_contents.call_count == 1
-    out, err = capsys.readouterr()
-    assert "NON-EXISTENT-REF" in out
-    assert "ref/non_existent_relative.html" in out
-    assert "non_existent_file.html" in out
-    assert err == ""
+    assert "NON-EXISTENT-REF" in caplog.text
+    assert "ref/non_existent_relative.html" in caplog.text
+    assert "non_existent_file.html" in caplog.text
 
 
-def test_ref_non_existent_root_relative(capsys):
+def test_ref_non_existent_root_relative(caplog):
     with _mock_lint("check_path") as mocked_check_path:
         with _mock_lint("check_file_contents") as mocked_check_file_contents:
-            rv = lint(_dummy_repo, ["ref/non_existent_root_relative.html"], False, False)
+            rv = lint(_dummy_repo, ["ref/non_existent_root_relative.html"], "normal", False)
             assert rv == 1
             assert mocked_check_path.call_count == 1
             assert mocked_check_file_contents.call_count == 1
-    out, err = capsys.readouterr()
-    assert "NON-EXISTENT-REF" in out
-    assert "ref/non_existent_root_relative.html" in out
-    assert "/non_existent_file.html" in out
-    assert err == ""
+    assert "NON-EXISTENT-REF" in caplog.text
+    assert "ref/non_existent_root_relative.html" in caplog.text
+    assert "/non_existent_file.html" in caplog.text
 
 
-def test_ref_absolute_url(capsys):
+
+def test_ref_absolute_url(caplog):
     with _mock_lint("check_path") as mocked_check_path:
         with _mock_lint("check_file_contents") as mocked_check_file_contents:
-            rv = lint(_dummy_repo, ["ref/absolute.html"], False, False)
+            rv = lint(_dummy_repo, ["ref/absolute.html"], "normal", False)
             assert rv == 1
             assert mocked_check_path.call_count == 1
             assert mocked_check_file_contents.call_count == 1
-    out, err = capsys.readouterr()
-    assert "ABSOLUTE-URL-REF" in out
-    assert "http://example.com/reference.html" in out
-    assert "ref/absolute.html" in out
-    assert err == ""
+    assert "ABSOLUTE-URL-REF" in caplog.text
+    assert "http://example.com/reference.html" in caplog.text
+    assert "ref/absolute.html" in caplog.text
 
 
-def test_ref_same_file_empty(capsys):
+def test_ref_same_file_empty(caplog):
     with _mock_lint("check_path") as mocked_check_path:
         with _mock_lint("check_file_contents") as mocked_check_file_contents:
-            rv = lint(_dummy_repo, ["ref/same_file_empty.html"], False, False)
+            rv = lint(_dummy_repo, ["ref/same_file_empty.html"], "normal", False)
             assert rv == 1
             assert mocked_check_path.call_count == 1
             assert mocked_check_file_contents.call_count == 1
-    out, err = capsys.readouterr()
-    assert "SAME-FILE-REF" in out
-    assert "same_file_empty.html" in out
-    assert err == ""
+    assert "SAME-FILE-REF" in caplog.text
+    assert "same_file_empty.html" in caplog.text
 
 
-def test_ref_same_file_path(capsys):
+def test_ref_same_file_path(caplog):
     with _mock_lint("check_path") as mocked_check_path:
         with _mock_lint("check_file_contents") as mocked_check_file_contents:
-            rv = lint(_dummy_repo, ["ref/same_file_path.html"], False, False)
+            rv = lint(_dummy_repo, ["ref/same_file_path.html"], "normal", False)
             assert rv == 1
             assert mocked_check_path.call_count == 1
             assert mocked_check_file_contents.call_count == 1
-    out, err = capsys.readouterr()
-    assert "SAME-FILE-REF" in out
-    assert "same_file_path.html" in out
-    assert err == ""
+    assert "SAME-FILE-REF" in caplog.text
+    assert "same_file_path.html" in caplog.text
 
 
-def test_lint_passing_and_failing(capsys):
+def test_lint_passing_and_failing(caplog):
     with _mock_lint("check_path") as mocked_check_path:
         with _mock_lint("check_file_contents") as mocked_check_file_contents:
-            rv = lint(_dummy_repo, ["broken.html", "okay.html"], False, False)
+            rv = lint(_dummy_repo, ["broken.html", "okay.html"], "normal", False)
             assert rv == 1
             assert mocked_check_path.call_count == 2
             assert mocked_check_file_contents.call_count == 2
-    out, err = capsys.readouterr()
-    assert "TRAILING WHITESPACE" in out
-    assert "broken.html:1" in out
-    assert "okay.html" not in out
-    assert err == ""
+    assert "TRAILING WHITESPACE" in caplog.text
+    assert "broken.html:1" in caplog.text
+    assert "okay.html" not in caplog.text
 
 
 def test_all_filesystem_paths():
@@ -284,7 +258,7 @@ def test_main_with_args():
         sys.argv = ['./lint', 'a', 'b', 'c']
         with _mock_lint('lint', return_value=True) as m:
             lint_mod.main()
-            m.assert_called_once_with(repo_root, ['a', 'b', 'c'], False, False)
+            m.assert_called_once_with(repo_root, ['a', 'b', 'c'], "normal", False)
     finally:
         sys.argv = orig_argv
 
@@ -296,6 +270,6 @@ def test_main_no_args():
         with _mock_lint('lint', return_value=True) as m:
             with _mock_lint('all_filesystem_paths', return_value=['foo', 'bar']) as m2:
                 lint_mod.main()
-                m.assert_called_once_with(repo_root, ['foo', 'bar'], False, False)
+                m.assert_called_once_with(repo_root, ['foo', 'bar'], "normal", False)
     finally:
         sys.argv = orig_argv
