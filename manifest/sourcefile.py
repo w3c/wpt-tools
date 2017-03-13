@@ -501,6 +501,11 @@ class SourceFile(object):
                   [TestharnessTest(self, replace_end(self.url, ".worker.js", ".worker.html"),
                                    timeout=self.timeout)])
 
+        elif self.name_is_window:
+            rv = (TestharnessTest.item_type,
+                  [TestharnessTest(self, replace_end(self.url, ".window.js", ".window.html"),
+                                   timeout=self.timeout)])
+
         elif self.name_is_webdriver:
             rv = WebdriverSpecTest.item_type, [WebdriverSpecTest(self, self.url,
                                                                  timeout=self.timeout)]
