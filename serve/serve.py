@@ -35,7 +35,16 @@ def replace_end(s, old, new):
     return s[:-len(old)] + new
 
 
-class WorkersHandler(object):
+class WrapperHandler(object):
+    # A list containing a mix of 2 item tuples with (input suffix, output suffix)
+    # and 3-item tuples with (input suffix, filesystem suffix, resource suffix)
+    # for the case where we want a different path in the generated resource to
+    # the actual path on the filesystem (e.g. when there is another handler
+    # that will wrap the file).
+    path_replace = None
+    # String template with variables path and meta for wrapper document
+    wrapper = None
+
     def __init__(self, base_path=None, url_base="/"):
         self.base_path = base_path
         self.url_base = url_base
@@ -45,44 +54,58 @@ class WorkersHandler(object):
         return self.handler(request, response)
 
     def handle_request(self, request, response):
-        worker_path = replace_end(request.url_parts.path, ".worker.html", ".worker.js")
+        path = self._get_path(request.url_parts.path, True)
         meta = "\n".join(self._get_meta(request))
-        return """<!doctype html>
+        return self.wrapper % {"meta": meta, "path": path}
+
+    def _get_path(self, path, resource_path):
+        for item in self.path_replace:
+            if len(item) == 2:
+                src, dest = item
+            else:
+                assert len(item) == 3
+                src = item[0]
+                dest = item[2 if resource_path else 1]
+            if path.endswith(src):
+                path = replace_end(path, src, dest)
+        return path
+
+    def _get_meta(self, request):
+        path = self._get_path(filesystem_path(self.base_path, request, self.url_base), False)
+        with open(path, "rb") as f:
+            for key, value in read_script_metadata(f, js_meta_re):
+                replacement = self._meta_replacement(key, value)
+                if replacement:
+                    yield replacement
+
+    def _meta_replacement(self, key, value):
+        if key == b"timeout":
+            if value == b"long":
+                return '<meta name="timeout" content="long">'
+        elif key == b"script":
+            attribute = value.decode('utf-8').replace('"', "&quot;").replace(">", "&gt;")
+            return '<script src="%s"></script>' % attribute
+
+
+class WorkersHandler(WrapperHandler):
+    path_replace = [(".any.worker.html", ".any.js", ".any.worker.js"),
+                    (".worker.html", ".worker.js")]
+    wrapper = """<!doctype html>
 <meta charset=utf-8>
 %(meta)s
 <script src="/resources/testharness.js"></script>
 <script src="/resources/testharnessreport.js"></script>
 <div id=log></div>
 <script>
-fetch_tests_from_worker(new Worker("%(worker_path)s"));
+fetch_tests_from_worker(new Worker("%(path)s"));
 </script>
-""" % {"meta": meta, "worker_path": worker_path}
-
-    def _get_meta(self, request):
-        path = filesystem_path(self.base_path, request, self.url_base)
-        path = path.replace(".any.worker.html", ".any.js")
-        path = path.replace(".worker.html", ".worker.js")
-        with open(path, "rb") as f:
-            for key, value in read_script_metadata(f, js_meta_re):
-                if key == b"timeout":
-                    if value == b"long":
-                        yield '<meta name="timeout" content="long">'
+"""
 
 
-class AnyHtmlHandler(object):
-    def __init__(self, base_path=None, url_base="/"):
-        self.base_path = base_path
-        self.url_base = url_base
-        self.handler = handlers.handler(self.handle_request)
 
-    def __call__(self, request, response):
-        return self.handler(request, response)
-
-    def handle_request(self, request, response):
-        test_path = replace_end(request.url_parts.path, ".any.html", ".any.js")
-        meta = "\n".join(self._get_meta(request))
-        return """\
-<!doctype html>
+class AnyHtmlHandler(WrapperHandler):
+    path_replace = [(".any.html", ".any.js")]
+    wrapper = """<!doctype html>
 <meta charset=utf-8>
 %(meta)s
 <script>
@@ -94,55 +117,29 @@ self.GLOBAL = {
 <script src="/resources/testharness.js"></script>
 <script src="/resources/testharnessreport.js"></script>
 <div id=log></div>
-<script src="%(test_path)s"></script>
-""" % {"meta": meta, "test_path": test_path}
-
-    def _get_meta(self, request):
-        path = filesystem_path(self.base_path, request, self.url_base)
-        path = path.replace(".any.html", ".any.js")
-        with open(path, "rb") as f:
-            for key, value in read_script_metadata(f, js_meta_re):
-                if key == b"timeout":
-                    if value == b"long":
-                        yield '<meta name="timeout" content="long">'
-                elif key == b"script":
-                    attribute = value.decode('utf-8').replace('"', "&quot;").replace(">", "&gt;")
-                    yield '<script src="%s"></script>' % attribute
+<script src="%(path)s"></script>
+"""
 
 
-class AnyWorkerHandler(object):
-    def __init__(self, base_path=None, url_base="/"):
-        self.base_path = base_path
-        self.url_base = url_base
-        self.handler = handlers.handler(self.handle_request)
-
-    def __call__(self, request, response):
-        return self.handler(request, response)
-
-    def handle_request(self, request, response):
-        test_path = replace_end(request.url_parts.path, ".any.worker.js", ".any.js")
-        meta = "\n".join(self._get_meta(request))
-        return """\
-%(meta)s
+class AnyWorkerHandler(WrapperHandler):
+    path_replace = [(".any.worker.js", ".any.js")]
+    wrapper =  """%(meta)s
 self.GLOBAL = {
   isWindow: function() { return false; },
   isWorker: function() { return true; },
 };
 importScripts("/resources/testharness.js");
-importScripts("%(test_path)s");
+importScripts("%(path)s");
 done();
-""" % {"meta": meta, "test_path": test_path}
+"""
 
-    def _get_meta(self, request):
-        path = filesystem_path(self.base_path, request, self.url_base)
-        path = path.replace(".any.worker.js", ".any.js")
-        with open(path, "rb") as f:
-            for key, value in read_script_metadata(f, js_meta_re):
-                if key == b"timeout":
-                    pass
-                elif key == b"script":
-                    attribute = value.decode('utf-8').replace("\\", "\\\\").replace('"', '\\"')
-                    yield 'importScripts("%s")' % attribute
+    def _meta_replacement(self, key, value):
+        for key, value in read_script_metadata(f, js_meta_re):
+            if key == b"timeout":
+                return None
+            elif key == b"script":
+                attribute = value.decode('utf-8').replace("\\", "\\\\").replace('"', '\\"')
+                return 'importScripts("%s")' % attribute
 
 
 rewrites = [("GET", "/resources/WebIDLParser.js", "/resources/webidl2/lib/webidl2.js")]
