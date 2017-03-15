@@ -91,6 +91,16 @@ class WrapperHandler(object):
                 if replacement:
                     yield replacement
 
+    def listing_fixup(self, base, names):
+        extras = set()
+        for name in names:
+            for item in self.path_replace:
+                dest, src = item[:2]
+                if name.endswith(src):
+                    extras.add(name.replace(src, dest))
+
+        return names | extras
+
     @abc.abstractproperty
     def path_replace(self):
         # A list containing a mix of 2 item tuples with (input suffix, output suffix)
@@ -243,10 +253,16 @@ class RoutesBuilder(object):
         ]
 
         for (method, suffix, handler_cls) in routes:
+            handler = handler_cls(base_path=path, url_base=url_base)
+            if hasattr(handler, "listing_fixup"):
+                listing_fixup = handler.listing_fixup
+            else:
+                listing_fixup = None
             self.mountpoint_routes[url_base].append(
                 (method,
                  b"%s%s" % (str(url_base) if url_base != "/" else "", str(suffix)),
-                 handler_cls(base_path=path, url_base=url_base)))
+                 handler,
+                 listing_fixup))
 
     def add_file_mount_point(self, file_url, base_path):
         assert file_url.startswith("/")
