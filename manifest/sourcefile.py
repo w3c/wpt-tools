@@ -429,13 +429,23 @@ class SourceFile(object):
         return rv
 
     @cached_property
-    def content_is_css_manual(self):
+    def content_is_css_manual_strong(self):
+        """Boolean indicating whether the file content represents a
+        CSS WG-style manual test, in a way that implies it's manual even
+        if it otherwise looks like a reftest or testharness test"""
+        if self.root is None:
+            return None
+        # return True if the intersection between the two sets is non-empty
+        return bool(self.css_flags & {"animated", "font", "history", "paged", "speech", "userstyle"})
+
+    @cached_property
+    def content_is_css_manual_weak(self):
         """Boolean indicating whether the file content represents a
         CSS WG-style manual test"""
         if self.root is None:
             return None
-        # return True if the intersection between the two sets is non-empty
-        return bool(self.css_flags & {"animated", "font", "history", "interact", "paged", "speech", "userstyle"})
+        # Interaective tests that are actually other tests are not manual
+        return bool(self.css_flags & {"interact"})
 
     @cached_property
     def spec_link_nodes(self):
@@ -516,7 +526,7 @@ class SourceFile(object):
             rv = WebdriverSpecTest.item_type, [WebdriverSpecTest(self, self.url,
                                                                  timeout=self.timeout)]
 
-        elif self.content_is_css_manual and not self.name_is_reference:
+        elif self.content_is_css_manual_strong and not self.name_is_reference:
             rv = ManualTest.item_type, [ManualTest(self, self.url)]
 
         elif self.content_is_testharness:
@@ -529,6 +539,9 @@ class SourceFile(object):
             rv = (RefTestNode.item_type,
                   [RefTestNode(self, self.url, self.references, timeout=self.timeout,
                                viewport_size=self.viewport_size, dpi=self.dpi)])
+
+        elif self.content_is_css_manual_weak and not self.name_is_reference:
+            rv = ManualTest.item_type, [ManualTest(self, self.url)]
 
         elif self.content_is_css_visual and not self.name_is_reference:
             rv = VisualTest.item_type, [VisualTest(self, self.url)]

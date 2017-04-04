@@ -472,6 +472,83 @@ def test_reftest_node(ext):
     assert items(s) == [("reftest_node", "/" + filename)]
 
 
+@pytest.mark.parametrize("flags", ["animated", "font", "history", "paged", "speech", "userstyle",
+                                   ("interact", "paged")])
+def test_css_manual_strong(flags):
+    if isinstance(flags, tuple):
+        flags = " ".join(flags)
+
+    content = b"""
+<html>
+<head>
+<link rel="help" href="http://www.w3.org/TR/CSS21/box.html#bidi-box-model">
+<link rel="match" href="test-ref.htm">
+<meta name="flags" content="%s">
+</head>
+<body></body>
+</html>
+""" % flags
+
+    filename = "css/test.htm"
+    s = create(filename, content)
+
+    assert s.content_is_ref_node
+    assert s.content_is_css_manual_strong
+
+    assert items(s) == [("manual", "/" + filename)]
+
+
+@pytest.mark.parametrize("flags", ["interact", ("interact", "ahem")])
+def test_not_css_manual_strong(flags):
+    if isinstance(flags, tuple):
+        flags = " ".join(flags)
+
+    content = b"""
+<html>
+<head>
+<link rel="help" href="http://www.w3.org/TR/CSS21/box.html#bidi-box-model">
+<link rel="match" href="test-ref.htm">
+<meta name="flags" content="%s">
+</head>
+<body></body>
+</html>
+""" % flags
+
+    filename = "css/test.htm"
+    s = create(filename, content)
+
+    assert s.content_is_ref_node
+    assert not s.content_is_css_manual_strong
+    assert s.content_is_css_manual_weak
+
+    assert items(s) == [("reftest_node", "/" + filename)]
+
+
+@pytest.mark.parametrize("flags", ["interact", ("interact", "ahem")])
+def test_css_manual_weak(flags):
+    if isinstance(flags, tuple):
+        flags = " ".join(flags)
+
+    content = b"""
+<html>
+<head>
+<link rel="help" href="http://www.w3.org/TR/CSS21/box.html#bidi-box-model">
+<meta name="flags" content="%s">
+</head>
+<body></body>
+</html>
+""" % flags
+
+    filename = "css/test.htm"
+    s = create(filename, content)
+
+    assert not s.content_is_ref_node
+    assert not s.content_is_css_manual_strong
+    assert s.content_is_css_manual_weak
+
+    assert items(s) == [("manual", "/" + filename)]
+
+
 @pytest.mark.parametrize("ext", ["xht", "html", "xhtml", "htm", "xml", "svg"])
 def test_css_visual(ext):
     content = b"""
